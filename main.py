@@ -24,8 +24,8 @@ try:
     display = SH1106_I2C(128, 64, i2c, rotate=180)
     display.sleep(False)
 
-    rotary = Rotary(Pin(20, Pin.IN), Pin(21, Pin.IN))
-    switch = Switch(Pin(22, Pin.IN))
+    rotary = Rotary(Pin(20, Pin.IN, Pin.PULL_UP), Pin(21, Pin.IN, Pin.PULL_UP))
+    switch = Switch(Pin(22, Pin.IN, Pin.PULL_UP))
 
     simulator = Earthquake(servo, display, rotary, switch)
 
