@@ -7,7 +7,6 @@ from servo import LinearServo
 from sh1106 import SH1106_I2C
 from simulator import Earthquake
 
-# led
 servo = None
 simulator = None
 try:

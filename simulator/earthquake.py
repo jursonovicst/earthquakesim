@@ -106,7 +106,10 @@ class Earthquake:
                 ts.period = 1 / self._freq
 
         elif self._mode == self.MODE_FUNC:
-            self._timeseries.append(self._timeseries.pop(0))
+            if v < 0:
+                self._timeseries.insert(0, self._timeseries.pop())
+            else:
+                self._timeseries.append(self._timeseries.pop(0))
 
     def _switch_change(self, v: bool):
         if v:
