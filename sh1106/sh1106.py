@@ -238,7 +238,7 @@ class SH1106(framebuf.FrameBuffer):
             time.sleep_ms(20)
 
     def print(self, buff: str):
-        for line in buff:
+        for line in buff.splitlines():
             print(line)
 
     @property
