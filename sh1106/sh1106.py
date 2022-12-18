@@ -71,20 +71,19 @@
 # display.text('Testing 1', 0, 0, 1)
 # display.show()
 
-from micropython import const
-import utime as time
 import framebuf
-
+import utime as time
+from micropython import const
 
 # a few register definitions
-_SET_CONTRAST        = const(0x81)
-_SET_NORM_INV        = const(0xa6)
-_SET_DISP            = const(0xae)
-_SET_SCAN_DIR        = const(0xc0)
-_SET_SEG_REMAP       = const(0xa0)
-_LOW_COLUMN_ADDRESS  = const(0x00)
+_SET_CONTRAST = const(0x81)
+_SET_NORM_INV = const(0xa6)
+_SET_DISP = const(0xae)
+_SET_SCAN_DIR = const(0xc0)
+_SET_SEG_REMAP = const(0xa0)
+_LOW_COLUMN_ADDRESS = const(0x00)
 _HIGH_COLUMN_ADDRESS = const(0x10)
-_SET_PAGE_ADDRESS    = const(0xB0)
+_SET_PAGE_ADDRESS = const(0xB0)
 
 
 class SH1106(framebuf.FrameBuffer):
@@ -140,7 +139,7 @@ class SH1106(framebuf.FrameBuffer):
         self.write_cmd(_SET_SCAN_DIR | (0x08 if mir_h else 0x00))
         self.flip_en = flag
         if update:
-            self.show(True) # full update
+            self.show(True)  # full update
 
     def sleep(self, value):
         self.write_cmd(_SET_DISP | (not value))
@@ -152,7 +151,7 @@ class SH1106(framebuf.FrameBuffer):
     def invert(self, invert):
         self.write_cmd(_SET_NORM_INV | (invert & 1))
 
-    def show(self, full_update = False):
+    def show(self, full_update=False):
         # self.* lookups in loops take significant time (~4fps).
         (w, p, db, rb) = (self.width, self.pages,
                           self.displaybuf, self.renderbuf)
@@ -163,26 +162,26 @@ class SH1106(framebuf.FrameBuffer):
             pages_to_update = (1 << self.pages) - 1
         else:
             pages_to_update = self.pages_to_update
-        #print("Updating pages: {:08b}".format(pages_to_update))
+        # print("Updating pages: {:08b}".format(pages_to_update))
         for page in range(self.pages):
             if (pages_to_update & (1 << page)):
                 self.write_cmd(_SET_PAGE_ADDRESS | page)
                 self.write_cmd(_LOW_COLUMN_ADDRESS | 2)
                 self.write_cmd(_HIGH_COLUMN_ADDRESS | 0)
-                self.write_data(db[(w*page):(w*page+w)])
+                self.write_data(db[(w * page):(w * page + w)])
         self.pages_to_update = 0
 
     def pixel(self, x, y, color=None):
         if color is None:
             return super().pixel(x, y)
         else:
-            super().pixel(x, y , color)
+            super().pixel(x, y, color)
             page = y // 8
             self.pages_to_update |= 1 << page
 
     def text(self, text, x, y, color=1):
         super().text(text, x, y, color)
-        self.register_updates(y, y+7)
+        self.register_updates(y, y + 7)
 
     def line(self, x0, y0, x1, y1, color):
         super().line(x0, y0, x1, y1, color)
@@ -194,7 +193,7 @@ class SH1106(framebuf.FrameBuffer):
 
     def vline(self, x, y, h, color):
         super().vline(x, y, h, color)
-        self.register_updates(y, y+h-1)
+        self.register_updates(y, y + h - 1)
 
     def fill(self, color):
         super().fill(color)
@@ -202,20 +201,20 @@ class SH1106(framebuf.FrameBuffer):
 
     def blit(self, fbuf, x, y, key=-1, palette=None):
         super().blit(fbuf, x, y, key, palette)
-        self.register_updates(y, y+self.height)
+        self.register_updates(y, y + self.height)
 
     def scroll(self, x, y):
         # my understanding is that scroll() does a full screen change
         super().scroll(x, y)
-        self.pages_to_update =  (1 << self.pages) - 1
+        self.pages_to_update = (1 << self.pages) - 1
 
     def fill_rect(self, x, y, w, h, color):
         super().fill_rect(x, y, w, h, color)
-        self.register_updates(y, y+h-1)
+        self.register_updates(y, y + h - 1)
 
     def rect(self, x, y, w, h, color):
         super().rect(x, y, w, h, color)
-        self.register_updates(y, y+h-1)
+        self.register_updates(y, y + h - 1)
 
     def register_updates(self, y0, y1=None):
         # this function takes the top and optional bottom address of the changes made
@@ -226,7 +225,7 @@ class SH1106(framebuf.FrameBuffer):
         # rearrange start_page and end_page if coordinates were given from bottom to top
         if start_page > end_page:
             start_page, end_page = end_page, start_page
-        for page in range(start_page, end_page+1):
+        for page in range(start_page, end_page + 1):
             self.pages_to_update |= 1 << page
 
     def reset(self, res):
@@ -237,6 +236,14 @@ class SH1106(framebuf.FrameBuffer):
             time.sleep_ms(20)
             res(1)
             time.sleep_ms(20)
+
+    def print(self, buff: str):
+        for line in buff:
+            print(line)
+
+    @property
+    def status(self):
+        return f"{self.__class__.__name__}: OK"
 
 
 class SH1106_I2C(SH1106):
@@ -256,7 +263,7 @@ class SH1106_I2C(SH1106):
         self.i2c.writeto(self.addr, self.temp)
 
     def write_data(self, buf):
-        self.i2c.writeto(self.addr, b'\x40'+buf)
+        self.i2c.writeto(self.addr, b'\x40' + buf)
 
     def reset(self):
         super().reset(self.res)

@@ -7,7 +7,7 @@ from timeseries import TimeSeries
 class TSRandom(TimeSeries):
 
     def __init__(self, samplingrate: float):
-        super(TSRandom, self).__init__('normal', samplingrate)
+        super(TSRandom, self).__init__('normal', 0, samplingrate)
 
     def _func(self, t: float) -> float:
         v = sqrt(-2 * log(random())) * cos(2 * pi * random()) / 3
@@ -16,4 +16,3 @@ class TSRandom(TimeSeries):
         if v < -1:
             return -1
         return v
-

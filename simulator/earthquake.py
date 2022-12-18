@@ -4,7 +4,7 @@ from rotary import Rotary, Switch
 from servo import LinearServo
 from sh1106 import SH1106
 from simulator import Graph
-from timeseries import TSSinus, TSTriangle, TSRandom, TSOnes, TSStep
+from timeseries import *
 
 
 class Earthquake:
@@ -26,13 +26,9 @@ class Earthquake:
         self._amp = 0
         self._freq = 1
         self._samplingrate = servo.maxfreq / 10
-        self._timeseries = [
-            TSSinus(1 / self._freq, samplingrate=self._samplingrate),
-            TSTriangle(1 / self._freq, samplingrate=self._samplingrate),
-            TSStep(1 / self._freq, samplingrate=self._samplingrate),
-            TSRandom(samplingrate=self._samplingrate),
-            TSOnes(samplingrate=self._samplingrate)
-        ]
+        self._tsclasses = ['TSSinus', 'TSTriangle', 'TSStep', 'TSRandom', 'TSOnes']
+        self._ts = eval(self._tsclasses[0])(1 / self._freq, 0, self._samplingrate)
+
         self._mode = self.MODE_AMP
 
         self._tim = None
@@ -56,7 +52,8 @@ class Earthquake:
 
     def _update(self, tim: Timer):
         # store value
-        self._value = next(self._timeseries[0])
+        assert isinstance(self._ts, TimeSeries), f"Wrong class, got {type(self._ts)}"
+        self._value = next(self._ts)
         assert -1 <= self._value <= 1, f"TS must be in -1..1, got {self._value}"
 
         # set servo position
@@ -102,14 +99,23 @@ class Earthquake:
             self._freq *= 1.1 ** v
 
             # update period
-            for ts in self._timeseries:
-                ts.period = 1 / self._freq
+            if isinstance(self._ts, TSPeriodic):
+                self._ts = eval(self._tsclasses[0])(1 / self._freq, self._ts.phase, self._samplingrate)
 
         elif self._mode == self.MODE_FUNC:
+            phase = 0
+            if isinstance(self._ts, TSPeriodic):
+                phase = self._ts.phase
+
             if v < 0:
-                self._timeseries.insert(0, self._timeseries.pop())
+                self._tsclasses.insert(0, self._tsclasses.pop())
             else:
-                self._timeseries.append(self._timeseries.pop(0))
+                self._tsclasses.append(self._tsclasses.pop(0))
+
+            if self._tsclasses[0] in ['TSSinus', 'TSTriangle', 'TSStep']:
+                self._ts = eval(self._tsclasses[0])(1 / self._freq, phase, self._samplingrate)
+            else:
+                self._ts = eval(self._tsclasses[0])(self._samplingrate)
 
     def _switch_change(self, v: bool):
         if v:
@@ -117,8 +123,9 @@ class Earthquake:
 
     def _refresh_display(self, tim: Timer):
         self._display.fill(0)
+        assert isinstance(self._ts, TimeSeries), f"Wrong class, got {type(self._ts)}"
         self._display.text(
-            f"{'A' if self._mode == self.MODE_AMP else 'a'}{self._amp:.1f} {'F' if self._mode == self.MODE_FREQ else 'f'}{self._freq:.2f} {self._timeseries[0].name[:3].upper() if self._mode == self.MODE_FUNC else self._timeseries[0].name[:3].lower()}",
+            f"{'A' if self._mode == self.MODE_AMP else 'a'}{self._amp:.1f} {'F' if self._mode == self.MODE_FREQ else 'f'}{self._freq:.2f} {self._ts.name[:3].upper() if self._mode == self.MODE_FUNC else self._ts.name[:3].lower()}",
             0, 0, 1)
         self._display.blit(self._graph, 0, self._display.height - self._graph.height)
         #        for i in range(0, 128, 8):
@@ -126,3 +133,7 @@ class Earthquake:
         #            self._display.line(i, amp2y(-self._amp), i + 4, amp2y(-self._amp), 1)
 
         self._display.show()
+
+    @property
+    def status(self) -> str:
+        return f"{self.__class__.__name__}: OK"

@@ -53,7 +53,7 @@ class Servo:
         if v > self._pmax:
             raise ValueError(v)
         self._pwm.duty_ns(int(v * 1000))
-        #print(f"Setting {self._pulse2degree(v):.1f}° ({v}us) pulse width")
+        # print(f"Setting {self._pulse2degree(v):.1f}° ({v}us) pulse width")
 
     @property
     def degree(self) -> float:
@@ -70,3 +70,7 @@ class Servo:
     @property
     def freq(self) -> int:
         return self._pwm.freq()
+
+    @property
+    def status(self) -> str:
+        return f"{self.__class__.__name__}: OK"

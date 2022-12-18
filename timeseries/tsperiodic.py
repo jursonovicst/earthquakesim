@@ -5,30 +5,20 @@ from timeseries import TimeSeries
 
 class TSPeriodic(TimeSeries):
 
-    def __init__(self, name: str, period: float, samplingrate: float):
+    def __init__(self, name: str, period: float, phase: float, samplingrate: float):
+        if period <= 0:
+            raise ValueError(f"Period ({period}) must be positive")
         self._period = period
-        super(TSPeriodic, self).__init__(name, samplingrate)
+
+        if not 0 <= phase < 2 * pi:
+            raise ValueError(f"Phase ({phase:.2f}) must be between 0 and 2π")
+
+        super(TSPeriodic, self).__init__(name, period * phase / 2 / pi, samplingrate)
 
     @property
     def phase(self) -> float:
-        return 2 * pi * ((self._t / self._period) % 1)
-
-    @phase.setter
-    def phase(self, ph):
-        # adjust _t to ensure phase
-        while not (-0.3 < (phase_delta := ph - self.phase) < 0.3):
-            self._t += self._period / 10 * phase_delta / 2 / pi
+        return 2 * pi * ((self.t / self._period) % 1)
 
     @property
     def period(self) -> float:
         return self._period
-
-    @period.setter
-    def period(self, v: float):
-        if v <= 0:
-            raise ValueError(f"Period must be positive, got: {v}")
-
-        # set new period, keep phase
-        phase_o = self.phase
-        self._period = v
-        self.phase = phase_o
